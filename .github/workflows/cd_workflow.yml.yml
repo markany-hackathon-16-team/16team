@@ -60,5 +60,5 @@ jobs:
           script_stop: true
           script: |
             echo "Starting new application..."
-            nohup java -jar ~/target/employee-management-1.0.0.jar > app.log 2>&1 &
+            nohup java -jar employee-management-1.0.0.jar > app.log 2>&1 &
             echo "New application started. Check app.log for details."
