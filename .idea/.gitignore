@@ -7,6 +7,5 @@
 /dataSources/
 /dataSources.local.xml
 
-.idea
-employee-management/target
-target
+idea
+../employee-management/target
