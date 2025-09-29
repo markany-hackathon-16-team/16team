@@ -27,7 +27,7 @@ jobs:
           username: ubuntu
           key: ${{ secrets.SSH_KEY }}
           port: 22
-          source: "employee-management/target/*.jar"
+          source: "*.jar"
           target: "~/"
           rm: false
           timeout: '30s'
