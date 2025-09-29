@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>프로젝트 관리 시스템</title>
+    <link th:href="@{/css/style.css}" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <h1>마크애니 관리 시스템</h1>
+        
+        <!-- 탭 메뉴 -->
+        <div class="tab-menu">
+            <a href="/" class="tab-item">대시보드</a>
+            <a href="/employees" class="tab-item">인력 관리</a>
+            <a href="/projects" class="tab-item active">프로젝트 관리</a>
+        </div>
+        
+        <div class="content">
+            <div class="header-actions">
+                <a href="/projects/new" class="btn btn-primary">프로젝트 등록</a>
+            </div>
+            
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>프로젝트ID</th>
+                        <th>프로젝트명</th>
+                        <th>유형</th>
+                        <th>복잡도</th>
+                        <th>총 MM</th>
+                        <th>기간</th>
+                        <th>시작일</th>
+                        <th>종료일</th>
+                        <th>상태</th>
+                        <th>개발자</th>
+                        <th>수행인력</th>
+                        <th>액션</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="project : ${projects}">
+                        <td th:text="${project.projectId}"></td>
+                        <td th:text="${project.projectName}"></td>
+                        <td th:text="${project.type}"></td>
+                        <td th:text="${project.complexity}"></td>
+                        <td th:text="${project.totalMm} + 'MM'"></td>
+                        <td th:text="${project.durationMonths} + '개월'"></td>
+                        <td th:text="${project.startDate}"></td>
+                        <td th:text="${project.endDate}"></td>
+                        <td th:text="${project.status}"></td>
+                        <td>
+                            <div th:if="${projectDevelopers[project.projectId] != null and !projectDevelopers[project.projectId].empty}">
+                                <span th:each="dev, iterStat : ${projectDevelopers[project.projectId]}">
+                                    <span th:text="${dev.name}"></span>
+                                    <span th:if="!${iterStat.last}">, </span>
+                                </span>
+                            </div>
+                            <span th:if="${projectDevelopers[project.projectId] == null or projectDevelopers[project.projectId].empty}">-</span>
+                        </td>
+                        <td>
+                            <div th:if="${projectPerformers[project.projectId] != null and !projectPerformers[project.projectId].empty}">
+                                <span th:each="perf, iterStat : ${projectPerformers[project.projectId]}">
+                                    <span th:text="${perf.name}"></span>
+                                    <span th:if="!${iterStat.last}">, </span>
+                                </span>
+                            </div>
+                            <span th:if="${projectPerformers[project.projectId] == null or projectPerformers[project.projectId].empty}">-</span>
+                        </td>
+                        <td>
+                            <a th:href="@{/projects/{id}/edit(id=${project.projectId})}" class="btn btn-sm">수정</a>
+                            <form th:action="@{/projects/{id}/delete(id=${project.projectId})}" method="post" style="display:inline;">
+                                <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('삭제하시겠습니까?')">삭제</button>
+                            </form>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</body>
+</html>
