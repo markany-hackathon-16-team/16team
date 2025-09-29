@@ -1,0 +1,28 @@
+spring:
+  datasource:
+    url: jdbc:mariadb://13.49.230.129:3306/allocator
+    username: root
+    password: 1q2w3e4r!
+    driver-class-name: org.mariadb.jdbc.Driver
+  
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+  
+  h2:
+    console:
+      enabled: false
+  
+  web:
+    resources:
+      static-locations: classpath:/static/
+      cache:
+        period: 0
+  
+  mvc:
+    format:
+      date: yyyy-MM-dd
+
+server:
+  port: 8080
