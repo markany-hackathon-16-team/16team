@@ -2,7 +2,8 @@ name: CD to Ubuntu Server
 
 on:
   push:
-    branches: [ "main" ]
+    branches:
+      - main
 
 jobs:
   build:
