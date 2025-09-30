@@ -19,15 +19,10 @@
         <div class="content">
             <!-- 요약 카드 -->
             <div class="dashboard-cards">
-                <div class="card">
-                    <h3>전체 인력</h3>
-                    <div class="card-number" th:text="${totalEmployees}">0</div>
-                    <div class="card-label">명 (가용률 <span th:text="${availabilityRate} + '%'">0%</span>)</div>
-                </div>
-                <div class="card">
-                    <h3>할당된 인력</h3>
-                    <div class="card-number" th:text="${assignedEmployees}">0</div>
-                    <div class="card-label">명</div>
+                <div class="card availability-card">
+                    <h3>가용률</h3>
+                    <div class="card-number" th:text="${availabilityRate} + '%'">0%</div>
+                    <div class="card-label">할당 가능 비율</div>
                 </div>
                 <div class="card">
                     <h3>전체 프로젝트</h3>
@@ -38,6 +33,16 @@
                     <h3>진행중 프로젝트</h3>
                     <div class="card-number" th:text="${activeProjects}">0</div>
                     <div class="card-label">개</div>
+                </div>
+                <div class="card">
+                    <h3>전체 인력</h3>
+                    <div class="card-number" th:text="${totalEmployees}">0</div>
+                    <div class="card-label">명</div>
+                </div>
+                <div class="card">
+                    <h3>할당된 인력</h3>
+                    <div class="card-number" th:text="${assignedEmployees}">0</div>
+                    <div class="card-label">명</div>
                 </div>
             </div>
             

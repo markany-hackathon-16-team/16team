@@ -68,6 +68,10 @@ h2 {
     box-shadow: 0 4px 6px rgba(0,0,0,0.1);
 }
 
+.availability-card {
+    background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%) !important;
+}
+
 .card h3 {
     margin: 0 0 10px 0;
     font-size: 14px;
