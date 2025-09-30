@@ -1,22 +1,38 @@
 package com.markany.employee;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-import org.springframework.web.reactive.function.client.WebClient;
+import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
+import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
+import software.amazon.awssdk.core.SdkBytes;
+import software.amazon.awssdk.regions.Region;
+import software.amazon.awssdk.services.bedrockruntime.BedrockRuntimeClient;
+import software.amazon.awssdk.services.bedrockruntime.model.InvokeModelRequest;
+import software.amazon.awssdk.services.bedrockruntime.model.InvokeModelResponse;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.JsonNode;
 import java.util.*;
 
+@Slf4j
 @Service
 public class BedrockService {
     
-    @Value("${bedrock.api.key}")
-    private String apiKey;
+    @Value("${aws.accessKeyId}")
+    private String accessKeyId;
     
-    private final WebClient webClient;
+    @Value("${aws.secretAccessKey}")
+    private String secretAccessKey;
+    
+    @Value("${aws.region}")
+    private String region;
+    
+    @Value("${bedrock.model-id}")
+    private String modelId;
+    
     private final ObjectMapper objectMapper;
     
     public BedrockService() {
-        this.webClient = WebClient.builder().build();
         this.objectMapper = new ObjectMapper();
     }
     
@@ -27,6 +43,7 @@ public class BedrockService {
             return parseRecommendations(response, availableEmployees);
         } catch (Exception e) {
             // Fallback: 기본 추천 로직
+            log.error("Bedrock API 호출 실패: " + e.getMessage());
             return getDefaultRecommendations(project, availableEmployees);
         }
     }
@@ -57,19 +74,40 @@ public class BedrockService {
     }
     
     private String callBedrockAPI(String prompt) {
-        // Bedrock API 호출 (실제 구현에서는 AWS SDK 사용)
-        Map<String, Object> requestBody = new HashMap<>();
-        requestBody.put("prompt", prompt);
-        requestBody.put("max_tokens", 500);
-        
         try {
-            return webClient.post()
-                .uri("https://bedrock.amazonaws.com/invoke")
-                .header("Authorization", "Bearer " + apiKey)
-                .bodyValue(requestBody)
-                .retrieve()
-                .bodyToMono(String.class)
-                .block();
+            AwsBasicCredentials awsCredentials = AwsBasicCredentials.create(accessKeyId, secretAccessKey);
+            
+            BedrockRuntimeClient client = BedrockRuntimeClient.builder()
+                .region(Region.of(region))
+                .credentialsProvider(StaticCredentialsProvider.create(awsCredentials))
+                .build();
+            
+            // Claude 3 요청 형식
+            Map<String, Object> requestBody = new HashMap<>();
+            requestBody.put("anthropic_version", "bedrock-2023-05-31");
+            requestBody.put("max_tokens", 500);
+            
+            List<Map<String, String>> messages = new ArrayList<>();
+            Map<String, String> message = new HashMap<>();
+            message.put("role", "user");
+            message.put("content", prompt);
+            messages.add(message);
+            requestBody.put("messages", messages);
+            
+            String jsonRequest = objectMapper.writeValueAsString(requestBody);
+            
+            InvokeModelRequest request = InvokeModelRequest.builder()
+                .modelId(modelId)
+                .body(SdkBytes.fromUtf8String(jsonRequest))
+                .build();
+            
+            InvokeModelResponse response = client.invokeModel(request);
+            String responseBody = response.body().asUtf8String();
+            
+            // Claude 3 응답에서 텍스트 추출
+            JsonNode jsonResponse = objectMapper.readTree(responseBody);
+            return jsonResponse.path("content").get(0).path("text").asText();
+            
         } catch (Exception e) {
             throw new RuntimeException("Bedrock API 호출 실패", e);
         }
