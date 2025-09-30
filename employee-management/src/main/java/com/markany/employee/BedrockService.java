@@ -89,7 +89,7 @@ public class BedrockService {
             
             List<Map<String, String>> messages = new ArrayList<>();
             Map<String, String> message = new HashMap<>();
-            message.put("role", "ghlee");
+            message.put("role", "user");
             message.put("content", prompt);
             messages.add(message);
             requestBody.put("messages", messages);
