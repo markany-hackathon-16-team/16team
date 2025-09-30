@@ -61,7 +61,7 @@
             <div class="recent-projects">
                 <h2>최근 프로젝트</h2>
                 <div class="project-cards">
-                    <div th:each="project : ${recentProjects}" class="project-card">
+                    <div th:each="project : ${recentProjects}" class="project-card clickable" th:data-project-id="${project.projectId}" style="cursor: pointer;">
                         <h4 th:text="${project.projectName}">프로젝트명</h4>
                         <div class="project-info">
                             <span class="status" th:text="${project.status}" th:class="'status-' + ${project.status}">상태</span>
@@ -69,12 +69,22 @@
                         </div>
                         <div class="project-dates">
                             <span th:text="'시작: ' + ${project.startDate}">시작일</span><br>
-                            <span th:text="'종료: ' + ${project.endDate}">종료일</span>
+                            <span th:text="'종료: ' + ${project.endDate}">종룼일</span>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            document.querySelectorAll('.project-card.clickable').forEach(function(card) {
+                card.addEventListener('click', function() {
+                    const projectId = this.getAttribute('data-project-id');
+                    window.location.href = '/projects/' + projectId;
+                });
+            });
+        });
+    </script>
 </body>
 </html>
