@@ -21,6 +21,7 @@
                 <a href="/projects" class="btn">목록으로</a>
                 <a th:href="@{/projects/{id}/edit(id=${project.projectId})}" class="btn btn-primary">수정</a>
                 <button id="recommendBtn" class="btn btn-secondary" th:data-project-id="${project.projectId}">AI 인력 추천</button>
+                <button id="completeBtn" class="btn btn-success" th:data-project-id="${project.projectId}" th:if="${project.status.toString() != '완료'}">프로젝트 완료</button>
             </div>
             
             <div class="detail-section">
@@ -62,6 +63,10 @@
                     <div class="detail-item">
                         <label>필요 스킬:</label>
                         <span th:text="${project.requiredSkills}"></span>
+                    </div>
+                    <div class="detail-item full-width">
+                        <label>프로젝트 설명:</label>
+                        <span th:text="${project.description}"></span>
                     </div>
                     <div class="detail-item full-width">
                         <label>비고:</label>
@@ -198,6 +203,46 @@
             .catch(error => {
                 console.error('Error:', error);
                 alert('인력 할당 중 오류가 발생했습니다.');
+            });
+        }
+        
+        // 프로젝트 완료 버튼 이벤트
+        const completeBtn = document.getElementById('completeBtn');
+        if (completeBtn) {
+            completeBtn.addEventListener('click', function() {
+                if (!confirm('프로젝트를 완료하시겠습니까? 이 작업은 되돌릴 수 없습니다.')) {
+                    return;
+                }
+                
+                const projectId = this.getAttribute('data-project-id');
+                const btn = this;
+                
+                btn.disabled = true;
+                btn.textContent = '완료 처리 중...';
+                
+                fetch(`/projects/${projectId}/complete`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert(data.message);
+                        location.reload();
+                    } else {
+                        alert('오류: ' + data.message);
+                        btn.disabled = false;
+                        btn.textContent = '프로젝트 완료';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('프로젝트 완료 중 오류가 발생했습니다.');
+                    btn.disabled = false;
+                    btn.textContent = '프로젝트 완료';
+                });
             });
         }
     </script>

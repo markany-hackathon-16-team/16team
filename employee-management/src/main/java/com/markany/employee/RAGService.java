@@ -16,9 +16,10 @@ public class RAGService {
     public List<EmployeeRecommendation> recommendWithRAG(Project project, List<Employee> availableEmployees) {
         int recommendCount = calculateRecommendCount(project.getTotalMm());
         
-        // 1. RAG 검색: 프로젝트 요구사항과 유사한 직원들 검색
+        // 1. RAG 검색: 프로젝트 요구사항과 유사한 직원들 검색 (설명 포함)
         List<Employee> similarEmployees = vectorStore.searchSimilarEmployees(
-            project.getRequiredSkills(), 
+            project.getRequiredSkills(),
+            project.getDescription(),
             availableEmployees, 
             Math.min(recommendCount * 2, availableEmployees.size()) // 더 많이 검색해서 다양성 확보
         );

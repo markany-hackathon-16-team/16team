@@ -41,6 +41,8 @@ public class Project {
     @Column(name = "required_skills")
     private String requiredSkills;
     
+    private String description;
+    
     private String notes;
     
     @Column(name = "created_at")
@@ -84,6 +86,9 @@ public class Project {
     
     public String getRequiredSkills() { return requiredSkills; }
     public void setRequiredSkills(String requiredSkills) { this.requiredSkills = requiredSkills; }
+    
+    public String getDescription() { return description; }
+    public void setDescription(String description) { this.description = description; }
     
     public String getNotes() { return notes; }
     public void setNotes(String notes) { this.notes = notes; }

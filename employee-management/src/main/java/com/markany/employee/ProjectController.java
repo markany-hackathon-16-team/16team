@@ -259,6 +259,9 @@ public class ProjectController {
     @Autowired
     private RAGService ragService;
     
+    @Autowired
+    private ProjectCompletionService projectCompletionService;
+    
     @PostMapping("/{id}/recommend")
     @ResponseBody
     public Map<String, Object> recommendEmployees(@PathVariable String id) {
@@ -344,5 +347,22 @@ public class ProjectController {
         }
         
         return combined;
+    }
+    
+    @PostMapping("/{id}/complete")
+    @ResponseBody
+    public Map<String, Object> completeProject(@PathVariable String id) {
+        Map<String, Object> response = new HashMap<>();
+        
+        try {
+            projectCompletionService.completeProject(id);
+            response.put("success", true);
+            response.put("message", "프로젝트가 성공적으로 완료되었고, 인력 임베딩이 업데이트되었습니다.");
+        } catch (Exception e) {
+            response.put("success", false);
+            response.put("message", "프로젝트 완료 처리 중 오류가 발생했습니다.");
+        }
+        
+        return response;
     }
 }

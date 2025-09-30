@@ -80,8 +80,60 @@ public class VectorStore {
         return vector;
     }
     
+    public void updateEmployeeVectorWithProjectHistory(Employee employee, List<ProjectHistory> projectHistories) {
+        Map<String, Double> vector = createEmployeeVector(employee);
+        
+        // 프로젝트 경험 가중치 추가
+        Map<String, Integer> projectTypeCount = new HashMap<>();
+        Map<String, Integer> skillExperienceCount = new HashMap<>();
+        
+        for (ProjectHistory history : projectHistories) {
+            // 프로젝트 유형 경험 추가
+            if (history.getProjectType() != null) {
+                String projectType = history.getProjectType().toLowerCase();
+                projectTypeCount.put(projectType, projectTypeCount.getOrDefault(projectType, 0) + 1);
+            }
+            
+            // 프로젝트에서 사용한 스킬 경험 추가
+            if (history.getRequiredSkills() != null) {
+                String[] skills = history.getRequiredSkills().split(",");
+                for (String skill : skills) {
+                    String normalizedSkill = skill.trim().toLowerCase();
+                    skillExperienceCount.put(normalizedSkill, skillExperienceCount.getOrDefault(normalizedSkill, 0) + 1);
+                }
+            }
+            
+            // 프로젝트 설명에서 의미있는 키워드만 추출
+            if (history.getProjectDescription() != null) {
+                extractMeaningfulKeywords(history.getProjectDescription()).forEach(keyword -> 
+                    skillExperienceCount.put("desc_" + keyword, skillExperienceCount.getOrDefault("desc_" + keyword, 0) + 1)
+                );
+            }
+        }
+        
+        // 프로젝트 유형 경험 벡터에 추가
+        for (Map.Entry<String, Integer> entry : projectTypeCount.entrySet()) {
+            double experienceWeight = Math.min(entry.getValue() * 0.2, 1.0); // 최대 1.0
+            vector.put("project_type_" + entry.getKey(), experienceWeight);
+        }
+        
+        // 스킬 경험 가중치 강화
+        for (Map.Entry<String, Integer> entry : skillExperienceCount.entrySet()) {
+            String skill = entry.getKey();
+            double experienceBoost = Math.min(entry.getValue() * 0.3, 0.5); // 최대 0.5 추가
+            double currentWeight = vector.getOrDefault(skill, 0.0);
+            vector.put(skill, currentWeight + experienceBoost);
+        }
+        
+        employeeVectors.put(employee.getEmpId(), vector);
+    }
+    
     public List<Employee> searchSimilarEmployees(String requiredSkills, List<Employee> availableEmployees, int topK) {
-        Map<String, Double> queryVector = createQueryVector(requiredSkills);
+        return searchSimilarEmployees(requiredSkills, null, availableEmployees, topK);
+    }
+    
+    public List<Employee> searchSimilarEmployees(String requiredSkills, String projectDescription, List<Employee> availableEmployees, int topK) {
+        Map<String, Double> queryVector = createQueryVector(requiredSkills, projectDescription);
         
         List<EmployeeScore> scores = new ArrayList<>();
         
@@ -102,7 +154,7 @@ public class VectorStore {
                 .collect(Collectors.toList());
     }
     
-    private Map<String, Double> createQueryVector(String requiredSkills) {
+    private Map<String, Double> createQueryVector(String requiredSkills, String projectDescription) {
         Map<String, Double> vector = new HashMap<>();
         
         if (requiredSkills != null) {
@@ -121,6 +173,13 @@ public class VectorStore {
                     }
                 }
             }
+        }
+        
+        // 프로젝트 설명에서 의미있는 키워드만 추출
+        if (projectDescription != null) {
+            extractMeaningfulKeywords(projectDescription).forEach(keyword -> 
+                vector.put("desc_" + keyword, 0.7)
+            );
         }
         
         return vector;
@@ -155,6 +214,17 @@ public class VectorStore {
         }
         
         return dotProduct / (Math.sqrt(norm1) * Math.sqrt(norm2));
+    }
+    
+    private Set<String> extractMeaningfulKeywords(String text) {
+        Set<String> stopWords = Set.of("시스템", "개발", "구축", "운영", "관리", "서비스", "프로젝트", "업무", 
+                                      "진행", "수행", "수정", "개선", "및", "또는", "그리고", "이를", "통해", "위해");
+        
+        return Arrays.stream(text.toLowerCase().split("\\s+"))
+                .map(word -> word.replaceAll("[^a-zA-Z가-힣0-9]", "").trim())
+                .filter(word -> word.length() > 1 && !stopWords.contains(word))
+                .limit(10) // 최대 10개 키워드만 사용
+                .collect(Collectors.toSet());
     }
     
     private static class EmployeeScore {

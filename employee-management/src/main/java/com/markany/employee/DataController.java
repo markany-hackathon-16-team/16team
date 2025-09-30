@@ -15,6 +15,9 @@ public class DataController {
     @Autowired
     private ProjectRepository projectRepository;
     
+    @Autowired
+    private ProjectHistoryRepository projectHistoryRepository;
+    
     @GetMapping("/init-data")
     public String initData() {
         // 데이터가 이미 있는지 확인
@@ -115,6 +118,35 @@ public class DataController {
             projectRepository.save(project);
         }
         
-        return "데이터 초기화 완료: 수행 50명, 개발자 50명, 프로젝트 20개 생성";
+        // 프로젝트 히스토리 30개 생성 (완료된 프로젝트 경험)
+        String[] historyDescriptions = {
+            "기업용 문서보안 솔루션 개발 프로젝트로서 JSON 기반 암호화 모듈과 BLUE DRM 기술을 활용하여 민감한 문서의 접근제어 및 권한관리 기능을 구현",
+            "개인정보보호법 준수를 위한 데이터 마스킹 및 익명화 시스템 구축 프로젝트로 대용량 데이터베이스에서 개인정보를 자동 탐지하고 암호화하는 배치 처리 시스템 개발",
+            "온프레미스 레거시 시스템을 AWS 클라우드로 마이그레이션하는 프로젝트로 Docker 컨테이너화와 Kubernetes 오케스트레이션을 통한 마이크로서비스 아키텍처 전환",
+            "React Native 기반 모바일 쇼핑 애플리케이션 개발 프로젝트로 실시간 결제 시스템과 상품 추천 알고리즘 구현",
+            "기업 네트워크 보안 모니터링 시스템 구축 프로젝트로 침입탐지시스템 구현과 실시간 위협 탐지 알고리즘 개발",
+            "Python 기반 머신러닝을 활용한 비즈니스 인텔리전스 대시보드 개발 프로젝트로 빅데이터 분석과 예측 모델링 구현",
+            "블록체인 기술을 활용한 공급망 추적 시스템 개발 프로젝트로 스마트 컨트랙트 구현과 분산원장 기반 제품 이력 관리"
+        };
+        
+        for (int i = 1; i <= 30; i++) {
+            ProjectHistory history = new ProjectHistory();
+            history.setEmployeeId(i <= 15 ? "P" + String.format("%03d", random.nextInt(50) + 1) : "D" + String.format("%03d", random.nextInt(50) + 1));
+            history.setProjectId("HIST" + String.format("%03d", i));
+            history.setProjectName("완료된프로젝트" + i);
+            history.setProjectType(projectTypes[random.nextInt(projectTypes.length)]);
+            history.setProjectDescription(historyDescriptions[random.nextInt(historyDescriptions.length)]);
+            history.setRequiredSkills(i <= 15 ? 
+                performerSkills[random.nextInt(performerSkills.length)] + ", " + performerSkills[random.nextInt(performerSkills.length)] :
+                devSkills[random.nextInt(devSkills.length)] + ", " + devSkills[random.nextInt(devSkills.length)]);
+            history.setComplexity(complexities[random.nextInt(complexities.length)].toString());
+            history.setRoleInProject(i <= 15 ? "수행인력" : "개발자");
+            LocalDate historyStart = LocalDate.now().minusMonths(random.nextInt(24) + 1);
+            history.setStartDate(historyStart.toString());
+            history.setEndDate(historyStart.plusMonths(random.nextInt(6) + 3).toString());
+            projectHistoryRepository.save(history);
+        }
+        
+        return "데이터 초기화 완료: 수행 50명, 개발자 50명, 프로젝트 20개, 프로젝트 히스토리 30개 생성";
     }
 }
