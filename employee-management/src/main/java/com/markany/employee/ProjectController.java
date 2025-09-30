@@ -5,6 +5,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import java.util.*;
+import org.springframework.web.bind.annotation.ResponseBody;
 
 @Controller
 @RequestMapping("/projects")
@@ -250,5 +251,27 @@ public class ProjectController {
     public String delete(@PathVariable String id) {
         projectRepository.deleteById(id);
         return "redirect:/projects";
+    }
+    
+    @Autowired
+    private BedrockService bedrockService;
+    
+    @PostMapping("/{id}/recommend")
+    @ResponseBody
+    public Map<String, Object> recommendEmployees(@PathVariable String id) {
+        Project project = projectRepository.findById(id).orElseThrow();
+        
+        // 가용한 인력 조회 (현재 프로젝트가 없고 가능 상태인 인력)
+        List<Employee> availableEmployees = employeeRepository.findAll().stream()
+            .filter(emp -> "가능".equals(emp.getAvailable().toString()) && 
+                          (emp.getCurrentProject() == null || emp.getCurrentProject().trim().isEmpty()))
+            .toList();
+        
+        List<EmployeeRecommendation> recommendations = bedrockService.recommendEmployees(project, availableEmployees);
+        
+        Map<String, Object> response = new HashMap<>();
+        response.put("success", true);
+        response.put("recommendations", recommendations);
+        return response;
     }
 }

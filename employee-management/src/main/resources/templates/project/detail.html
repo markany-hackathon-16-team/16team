@@ -20,6 +20,7 @@
             <div class="header-actions">
                 <a href="/projects" class="btn">목록으로</a>
                 <a th:href="@{/projects/{id}/edit(id=${project.projectId})}" class="btn btn-primary">수정</a>
+                <button id="recommendBtn" class="btn btn-secondary" th:data-project-id="${project.projectId}">AI 인력 추천</button>
             </div>
             
             <div class="detail-section">
@@ -93,7 +94,75 @@
                 </table>
                 <p th:if="${assignedEmployees.isEmpty()}">배정된 인력이 없습니다.</p>
             </div>
+            
+            <!-- AI 추천 결과 -->
+            <div id="recommendationSection" class="detail-section" style="display: none;">
+                <h3>AI 인력 추천 결과</h3>
+                <div id="recommendationResults"></div>
+            </div>
         </div>
     </div>
+    
+    <script>
+        document.getElementById('recommendBtn').addEventListener('click', function() {
+            const projectId = this.getAttribute('data-project-id');
+            const btn = this;
+            
+            btn.disabled = true;
+            btn.textContent = '추천 중...';
+            
+            fetch(`/projects/${projectId}/recommend`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    displayRecommendations(data.recommendations);
+                } else {
+                    alert('추천 중 오류가 발생했습니다.');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('추천 중 오류가 발생했습니다.');
+            })
+            .finally(() => {
+                btn.disabled = false;
+                btn.textContent = 'AI 인력 추천';
+            });
+        });
+        
+        function displayRecommendations(recommendations) {
+            const section = document.getElementById('recommendationSection');
+            const results = document.getElementById('recommendationResults');
+            
+            if (recommendations.length === 0) {
+                results.innerHTML = '<p>추천할 수 있는 인력이 없습니다.</p>';
+            } else {
+                let html = '<table class="data-table"><thead><tr><th>직원ID</th><th>이름</th><th>역할</th><th>레벨</th><th>경력</th><th>스킬</th><th>추천이유</th></tr></thead><tbody>';
+                
+                recommendations.forEach(rec => {
+                    const emp = rec.employee;
+                    html += `<tr>
+                        <td>${emp.empId}</td>
+                        <td>${emp.name}</td>
+                        <td>${emp.role}</td>
+                        <td>${emp.level}</td>
+                        <td>${emp.yearsExp || 0}년</td>
+                        <td>${emp.skills || '-'}</td>
+                        <td>${rec.reason}</td>
+                    </tr>`;
+                });
+                
+                html += '</tbody></table>';
+                results.innerHTML = html;
+            }
+            
+            section.style.display = 'block';
+        }
+    </script>
 </body>
 </html>
