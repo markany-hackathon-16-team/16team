@@ -19,10 +19,9 @@ public class DashboardController {
         long totalEmployees = employeeRepository.count();
         long totalProjects = projectRepository.count();
         
-        // 실제 가용 인력: 프로젝트에 할당되지 않은 인원
+        // 할당 가능한 인원 수 (가용 상태이면서 프로젝트에 할당되지 않은 인원)
         long availableEmployees = employeeRepository.findAll().stream()
             .mapToLong(emp -> {
-                // 가용 상태이면서 현재 프로젝트가 없는 경우
                 boolean isAvailable = "가능".equals(emp.getAvailable().toString());
                 boolean hasNoProject = emp.getCurrentProject() == null || emp.getCurrentProject().trim().isEmpty();
                 return (isAvailable && hasNoProject) ? 1 : 0;
@@ -36,6 +35,9 @@ public class DashboardController {
                 return hasProject ? 1 : 0;
             })
             .sum();
+            
+        // 가용률 계산 (백분율) - 할당 가능한 사람의 비율
+        double availabilityRate = totalEmployees > 0 ? (double) availableEmployees / totalEmployees * 100 : 0;
         
         long activeProjects = projectRepository.findAll().stream()
             .mapToLong(proj -> "진행중".equals(proj.getStatus().toString()) ? 1 : 0)
@@ -43,7 +45,7 @@ public class DashboardController {
         
         model.addAttribute("totalEmployees", totalEmployees);
         model.addAttribute("totalProjects", totalProjects);
-        model.addAttribute("availableEmployees", availableEmployees);
+        model.addAttribute("availabilityRate", Math.round(availabilityRate * 10.0) / 10.0); // 소수점 첫째 자리까지
         model.addAttribute("assignedEmployees", assignedEmployees);
         model.addAttribute("activeProjects", activeProjects);
         model.addAttribute("recentProjects", projectRepository.findAll());

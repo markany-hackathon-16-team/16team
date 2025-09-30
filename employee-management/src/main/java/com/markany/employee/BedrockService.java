@@ -40,7 +40,7 @@ public class BedrockService {
         try {
             String prompt = buildPrompt(project, availableEmployees);
             String response = callBedrockAPI(prompt);
-            return parseRecommendations(response, availableEmployees);
+            return parseRecommendations(response, availableEmployees, project);
         } catch (Exception e) {
             // Fallback: 기본 추천 로직
             log.error("Bedrock API 호출 실패: " + e.getMessage());
@@ -49,13 +49,16 @@ public class BedrockService {
     }
     
     private String buildPrompt(Project project, List<Employee> employees) {
+        int recommendCount = calculateRecommendCount(project.getTotalMm());
+        
         StringBuilder prompt = new StringBuilder();
         prompt.append("프로젝트 정보:\n");
         prompt.append("- 프로젝트명: ").append(project.getProjectName()).append("\n");
         prompt.append("- 유형: ").append(project.getType()).append("\n");
         prompt.append("- 복잡도: ").append(project.getComplexity()).append("\n");
         prompt.append("- 필요 스킬: ").append(project.getRequiredSkills()).append("\n");
-        prompt.append("- 총 MM: ").append(project.getTotalMm()).append("\n\n");
+        prompt.append("- 총 MM: ").append(project.getTotalMm()).append("명\n");
+        prompt.append("- 필요 인원수: ").append(recommendCount).append("명\n\n");
         
         prompt.append("가용 인력 정보:\n");
         for (Employee emp : employees) {
@@ -67,7 +70,8 @@ public class BedrockService {
                   .append(", 스킬=").append(emp.getSkills()).append("\n");
         }
         
-        prompt.append("\n위 프로젝트에 가장 적합한 인력 3명을 추천해주세요. ");
+        prompt.append("\n위 프로젝트에 가장 적합한 인력 ").append(recommendCount).append("명을 추천해주세요. ");
+        prompt.append("추천 시 경력이나 이력을 가장 중요한 기준으로 고려하고, 다음으로 스킬 매칭, 마지막으로 레벨을 고려해주세요. ");
         prompt.append("각 인력의 ID와 추천 이유를 한 줄로 요약해서 '직원ID: 추천이유' 형식으로 응답해주세요.");
         
         return prompt.toString();
@@ -114,32 +118,48 @@ public class BedrockService {
         }
     }
     
-    private List<EmployeeRecommendation> parseRecommendations(String response, List<Employee> availableEmployees) {
+    private List<EmployeeRecommendation> parseRecommendations(String response, List<Employee> availableEmployees, Project project) {
+        int recommendCount = calculateRecommendCount(project.getTotalMm());
+        
         // AI 응답에서 직원 ID와 추천 이유 추출
         List<EmployeeRecommendation> recommendations = new ArrayList<>();
         
         for (Employee emp : availableEmployees) {
-            if (response.contains(emp.getEmpId()) && recommendations.size() < 3) {
+            if (response.contains(emp.getEmpId()) && recommendations.size() < recommendCount) {
                 String reason = extractReason(response, emp.getEmpId());
                 recommendations.add(new EmployeeRecommendation(emp, reason));
             }
         }
         
-        return recommendations.isEmpty() ? getDefaultRecommendations(null, availableEmployees) : recommendations;
+        return recommendations.isEmpty() ? getDefaultRecommendations(project, availableEmployees) : recommendations;
     }
     
     private List<EmployeeRecommendation> getDefaultRecommendations(Project project, List<Employee> availableEmployees) {
-        // 기본 추천 로직: 경력과 레벨 기준으로 정렬
+        int recommendCount = project != null ? calculateRecommendCount(project.getTotalMm()) : 3;
+        
+        // 기본 추천 로직: 경력 우선, 다음 레벨 기준으로 정렬
         return availableEmployees.stream()
             .sorted((e1, e2) -> {
-                int levelCompare = compareLevel(e2.getLevel(), e1.getLevel());
-                if (levelCompare != 0) return levelCompare;
-                return Integer.compare(e2.getYearsExp() != null ? e2.getYearsExp() : 0, 
-                                     e1.getYearsExp() != null ? e1.getYearsExp() : 0);
+                // 경력을 첫 번째 기준으로 비교 (경력 높은 순)
+                int exp1 = e1.getYearsExp() != null ? e1.getYearsExp() : 0;
+                int exp2 = e2.getYearsExp() != null ? e2.getYearsExp() : 0;
+                int expCompare = Integer.compare(exp2, exp1);
+                if (expCompare != 0) return expCompare;
+                
+                // 경력이 같으면 레벨로 비교
+                return compareLevel(e2.getLevel(), e1.getLevel());
             })
-            .limit(3)
+            .limit(recommendCount)
             .map(emp -> new EmployeeRecommendation(emp, generateDefaultReason(emp)))
             .toList();
+    }
+    
+    private int calculateRecommendCount(Integer totalMm) {
+        if (totalMm == null || totalMm <= 0) return 3;
+        
+        // MM 숫자 자체가 필요한 인력 수
+        // 최소 1명, 최대 10명으로 제한
+        return Math.max(1, Math.min(10, totalMm));
     }
     
     private String extractReason(String response, String empId) {
@@ -159,9 +179,11 @@ public class BedrockService {
     
     private String generateDefaultReason(Employee emp) {
         StringBuilder reason = new StringBuilder();
-        reason.append(emp.getLevel()).append(" 레벨의 ");
+        reason.append("[기본 추천] ");
+        // 경력을 먼저 언급
         reason.append(emp.getYearsExp() != null ? emp.getYearsExp() + "년 경력" : "경력");
-        reason.append(" ").append(emp.getRole());
+        reason.append(", ").append(emp.getLevel()).append(" 레벨 ");
+        reason.append(emp.getRole());
         if (emp.getSkills() != null && !emp.getSkills().trim().isEmpty()) {
             reason.append(", ").append(emp.getSkills()).append(" 스킬 보유");
         }

@@ -22,12 +22,7 @@
                 <div class="card">
                     <h3>전체 인력</h3>
                     <div class="card-number" th:text="${totalEmployees}">0</div>
-                    <div class="card-label">명</div>
-                </div>
-                <div class="card">
-                    <h3>가용 인력</h3>
-                    <div class="card-number" th:text="${availableEmployees}">0</div>
-                    <div class="card-label">명 (미할당)</div>
+                    <div class="card-label">명 (가용률 <span th:text="${availabilityRate} + '%'">0%</span>)</div>
                 </div>
                 <div class="card">
                     <h3>할당된 인력</h3>
