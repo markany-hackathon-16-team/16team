@@ -27,13 +27,27 @@ public class DataController {
         
         Random random = new Random();
         
+        // 한국 이름 목록
+        String[] koreanNames = {
+            "김민준", "이수진", "박지훈", "최예지", "정동현", "강소영", "윤재호", "임다은", "한준서", "오미지",
+            "신창호", "배지은", "송민호", "전예린", "고준영", "류소연", "서지후", "노예진", "김동욱", "이지연",
+            "박성훈", "최지우", "정예진", "강민준", "윤소영", "임준호", "한예지", "오지훈", "신다은", "배준서",
+            "송지은", "전민호", "고예린", "류준영", "서소연", "노지후", "김예진", "이동욱", "박지연", "최성훈",
+            "정지우", "강예진", "윤민준", "임소영", "한준호", "오예지", "신지훈", "배다은", "송준서", "전지은",
+            "고민호", "류예린", "서준영", "노소연", "김지후", "이예진", "박동욱", "최지연", "정성훈", "강지우",
+            "윤예진", "임민준", "한소영", "오준호", "신예지", "배지훈", "송다은", "전준서", "고지은", "류민호",
+            "서예린", "노준영", "김소연", "이지후", "박예진", "최동욱", "정지연", "강성훈", "윤지우", "임예진",
+            "한민준", "오소영", "신준호", "배예지", "송지훈", "전다은", "고준서", "류지은", "서민호", "노예린",
+            "김준영", "이소연", "박지후", "최예진", "정동욱", "강지연", "윤성훈", "임지우", "한예진", "오민준"
+        };
+        
         // 수행 50명 생성
         String[] performerSkills = {"문서보안JSON", "문서보안BLUE", "개인정보보안", "화면보안", "출력물보안", "암호화", "접근제어", "로그분석", "보안감사", "취약점분석", "침해대응", "정보보호", "네트워크보안", "시스템보안", "데이터보안"};
         
         for (int i = 1; i <= 50; i++) {
             Employee performer = new Employee();
             performer.setEmpId("P" + String.format("%03d", i));
-            performer.setName("수행" + i);
+            performer.setName(koreanNames[random.nextInt(koreanNames.length)]);
             performer.setRole(Employee.Role.수행인력);
             performer.setYearsExp(random.nextInt(10) + 1);
             performer.setLevel(Employee.Level.values()[random.nextInt(Employee.Level.values().length)]);
@@ -59,7 +73,7 @@ public class DataController {
         for (int i = 1; i <= 50; i++) {
             Employee developer = new Employee();
             developer.setEmpId("D" + String.format("%03d", i));
-            developer.setName("개발자" + i);
+            developer.setName(koreanNames[random.nextInt(koreanNames.length)]);
             developer.setRole(Employee.Role.개발자);
             developer.setYearsExp(random.nextInt(15) + 1);
             developer.setLevel(Employee.Level.values()[random.nextInt(Employee.Level.values().length)]);

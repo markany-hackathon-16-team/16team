@@ -274,4 +274,39 @@ public class ProjectController {
         response.put("recommendations", recommendations);
         return response;
     }
+    
+    @PostMapping("/{id}/assign")
+    @ResponseBody
+    public Map<String, Object> assignEmployees(@PathVariable String id, @RequestBody Map<String, Object> request) {
+        Map<String, Object> response = new HashMap<>();
+        
+        try {
+            @SuppressWarnings("unchecked")
+            List<String> employeeIds = (List<String>) request.get("employeeIds");
+            
+            if (employeeIds == null || employeeIds.isEmpty()) {
+                response.put("success", false);
+                response.put("message", "할당할 인력을 선택해주세요.");
+                return response;
+            }
+            
+            // 선택된 인력들을 프로젝트에 할당
+            for (String empId : employeeIds) {
+                Employee emp = employeeRepository.findById(empId).orElse(null);
+                if (emp != null) {
+                    emp.setCurrentProject(id);
+                    employeeRepository.save(emp);
+                }
+            }
+            
+            response.put("success", true);
+            response.put("message", employeeIds.size() + "명의 인력이 성공적으로 할당되었습니다.");
+            
+        } catch (Exception e) {
+            response.put("success", false);
+            response.put("message", "인력 할당 중 오류가 발생했습니다.");
+        }
+        
+        return response;
+    }
 }

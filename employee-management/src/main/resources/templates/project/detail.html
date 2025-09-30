@@ -142,7 +142,7 @@
             if (recommendations.length === 0) {
                 results.innerHTML = '<p>추천할 수 있는 인력이 없습니다.</p>';
             } else {
-                let html = '<table class="data-table"><thead><tr><th>직원ID</th><th>이름</th><th>역할</th><th>레벨</th><th>경력</th><th>스킬</th><th>추천이유</th></tr></thead><tbody>';
+                let html = '<table class="data-table"><thead><tr><th>직원ID</th><th>이름</th><th>역할</th><th>레벨</th><th>경력</th><th>스킬</th><th>추천이유</th><th>선택</th></tr></thead><tbody>';
                 
                 recommendations.forEach(rec => {
                     const emp = rec.employee;
@@ -154,14 +154,51 @@
                         <td>${emp.yearsExp || 0}년</td>
                         <td>${emp.skills || '-'}</td>
                         <td>${rec.reason}</td>
+                        <td><input type="checkbox" name="selectedEmployees" value="${emp.empId}" class="employee-checkbox"></td>
                     </tr>`;
                 });
                 
                 html += '</tbody></table>';
+                html += '<div style="margin-top: 15px;"><button id="assignSelectedBtn" class="btn btn-primary" onclick="assignSelectedEmployees()">선택된 인력 할당</button></div>';
                 results.innerHTML = html;
             }
             
             section.style.display = 'block';
+        }
+        
+        function assignSelectedEmployees() {
+            const checkboxes = document.querySelectorAll('.employee-checkbox:checked');
+            const selectedEmployeeIds = Array.from(checkboxes).map(cb => cb.value);
+            
+            if (selectedEmployeeIds.length === 0) {
+                alert('할당할 인력을 선택해주세요.');
+                return;
+            }
+            
+            const projectId = document.getElementById('recommendBtn').getAttribute('data-project-id');
+            
+            fetch(`/projects/${projectId}/assign`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    employeeIds: selectedEmployeeIds
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert(`${selectedEmployeeIds.length}명의 인력이 성공적으로 할당되었습니다.`);
+                    location.reload(); // 페이지 새로고침
+                } else {
+                    alert('인력 할당 중 오류가 발생했습니다: ' + (data.message || ''));
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('인력 할당 중 오류가 발생했습니다.');
+            });
         }
     </script>
 </body>
