@@ -89,7 +89,7 @@ public class BedrockService {
             
             List<Map<String, String>> messages = new ArrayList<>();
             Map<String, String> message = new HashMap<>();
-            message.put("role", "user");
+            message.put("role", "ghlee");
             message.put("content", prompt);
             messages.add(message);
             requestBody.put("messages", messages);
@@ -109,6 +109,7 @@ public class BedrockService {
             return jsonResponse.path("content").get(0).path("text").asText();
             
         } catch (Exception e) {
+            log.error("Bedrock API 호출 실패: " + e.getMessage());
             throw new RuntimeException("Bedrock API 호출 실패", e);
         }
     }
