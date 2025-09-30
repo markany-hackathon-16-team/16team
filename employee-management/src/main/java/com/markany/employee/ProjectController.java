@@ -256,6 +256,9 @@ public class ProjectController {
     @Autowired
     private BedrockService bedrockService;
     
+    @Autowired
+    private RAGService ragService;
+    
     @PostMapping("/{id}/recommend")
     @ResponseBody
     public Map<String, Object> recommendEmployees(@PathVariable String id) {
@@ -267,7 +270,12 @@ public class ProjectController {
                           (emp.getCurrentProject() == null || emp.getCurrentProject().trim().isEmpty()))
             .toList();
         
-        List<EmployeeRecommendation> recommendations = bedrockService.recommendEmployees(project, availableEmployees);
+        // RAG + LLM 하이브리드 추천
+        List<EmployeeRecommendation> ragRecommendations = ragService.recommendWithRAG(project, availableEmployees);
+        List<EmployeeRecommendation> llmRecommendations = bedrockService.recommendEmployees(project, availableEmployees);
+        
+        // RAG 결과를 우선하되, LLM 결과로 보완
+        List<EmployeeRecommendation> recommendations = combineRecommendations(ragRecommendations, llmRecommendations);
         
         Map<String, Object> response = new HashMap<>();
         response.put("success", true);
@@ -308,5 +316,33 @@ public class ProjectController {
         }
         
         return response;
+    }
+    
+    private List<EmployeeRecommendation> combineRecommendations(
+            List<EmployeeRecommendation> ragRecommendations, 
+            List<EmployeeRecommendation> llmRecommendations) {
+        
+        List<EmployeeRecommendation> combined = new ArrayList<>();
+        Set<String> addedEmployeeIds = new HashSet<>();
+        
+        // RAG 추천을 우선 추가
+        for (EmployeeRecommendation rec : ragRecommendations) {
+            if (!addedEmployeeIds.contains(rec.getEmployee().getEmpId())) {
+                combined.add(rec);
+                addedEmployeeIds.add(rec.getEmployee().getEmpId());
+            }
+        }
+        
+        // LLM 추천으로 보완 (중복 제거)
+        for (EmployeeRecommendation rec : llmRecommendations) {
+            if (!addedEmployeeIds.contains(rec.getEmployee().getEmpId()) && combined.size() < 8) {
+                // LLM 추천 표시 추가
+                String enhancedReason = "[LLM 보완] " + rec.getReason();
+                combined.add(new EmployeeRecommendation(rec.getEmployee(), enhancedReason));
+                addedEmployeeIds.add(rec.getEmployee().getEmpId());
+            }
+        }
+        
+        return combined;
     }
 }
